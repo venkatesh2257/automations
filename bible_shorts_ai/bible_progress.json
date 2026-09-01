@@ -1,0 +1,14 @@
+{
+  "current_book": "Genesis",
+  "current_chapter": 2,
+  "total_videos_created": 3,
+  "last_updated": "2026-09-01T12:30:35.628851",
+  "completed_chapters": [
+    {
+      "book": "Genesis",
+      "chapter": 1,
+      "completed_at": "2026-09-01T12:30:35.628851",
+      "parts_generated": 3
+    }
+  ]
+}

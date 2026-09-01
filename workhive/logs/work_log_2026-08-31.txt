@@ -1,0 +1,18 @@
+Workhive Daily Work Log - 2026-08-31
+Hours Spent: 8.8
+
+1. Keep Time-Out button enabled even if out-time is already recorded to allow multiple outings.
+2. Allow multiple punch-outs in fast flow by removing the auto-logout block when outTime is already set.
+3. Compile Java sources with Gradle.
+4. Created walkthrough.md to document changes for multiple outings / punch-outs support.
+5. Build debug APK with Gradle.
+6. Copy and rename APK to root.
+7. Ensure biometric capture XML error triggers failure audio, shows the error message, and allows retrying rather than auto-submitting.
+8. Ensure POJO deserialization error triggers failure audio, shows error toast, and allows retry rather than auto-submitting.
+9. Ensure biometric capture failure triggers failure audio feedback and allows retry rather than auto-submitting.
+10. Ensure biometric mismatch triggers failure audio, shows the failure toast, and allows retry rather than auto-submitting.
+11. Ensure biometric HTTP error triggers failure audio, shows error toast, and allows retry rather than auto-submitting.
+12. Ensure biometric network failure triggers failure audio, shows error toast, and allows retry rather than auto-submitting.
+13. Copy and rename final APK to root.
+14. Updated walkthrough.md to document the biometric error handling UX fixes.
+15. Increase biometric capture timeout from 15 seconds to 30 seconds to allow users more time to place their finger.
