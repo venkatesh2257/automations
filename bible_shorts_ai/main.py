@@ -46,14 +46,15 @@ def run_pipeline(
     print(f"  [✓] Audio generated: {audio_path.name} ({len(cues)} subtitle cues)")
 
     # 3. Generate Scene Visuals
-    print("\n[Step 3/5] Generating Cinematic 9:16 Scene Images (Flux Engine)...")
+    print("\n[Step 3/5] Generating High-Resolution 9:16 Scene Imagery (Pexels 4K & Fallbacks)...")
     image_paths = []
     for scene in story.scenes:
         img_path = TEMP_DIR / f"scene_{timestamp}_{scene.scene_id}.jpg"
         generate_scene_image(
             prompt=scene.visual_prompt,
             output_path=img_path,
-            scene_number=scene.scene_id
+            scene_number=scene.scene_id,
+            narration=scene.narration
         )
         image_paths.append(img_path)
 

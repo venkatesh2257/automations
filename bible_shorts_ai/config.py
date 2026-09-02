@@ -49,6 +49,8 @@ if env_file.exists():
 
 # AI & APIs
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
+PEXELS_API_KEY = os.environ.get("PEXELS_API_KEY", "")
+OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "")
 YOUTUBE_CLIENT_SECRETS_FILE = BASE_DIR / "client_secrets.json"
 YOUTUBE_TOKEN_FILE = BASE_DIR / "token.json"
 
@@ -61,3 +63,5 @@ INSTAGRAM_SESSION_FILE = BASE_DIR / "ig_session.json"
 IMAGE_WIDTH = 1080
 IMAGE_HEIGHT = 1920
 IMAGE_MODEL = "flux"  # flux, turbo
+CACHE_DIR = ASSETS_DIR / "cache"
+CACHE_DIR.mkdir(parents=True, exist_ok=True)

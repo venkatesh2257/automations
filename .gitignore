@@ -1,3 +1,19 @@
-# Google OAuth credentials
+# Python & Virtualenv
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+
+# Environment and secrets
+*.env
 bible_shorts_ai/token.json
 bible_shorts_ai/client_secrets.json
+bible_shorts_ai/ig_session.json
+
+# Generated video outputs & temporary files
+bible_shorts_ai/temp/
+bible_shorts_ai/output/*.mp4
+tech_course_ai/temp/
+tech_course_ai/output/*.mp4
+tech_course_ai/assets/broll/

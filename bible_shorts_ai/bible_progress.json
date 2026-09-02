@@ -1,13 +1,25 @@
 {
   "current_book": "Genesis",
-  "current_chapter": 2,
-  "total_videos_created": 3,
-  "last_updated": "2026-09-01T12:30:35.628851",
+  "current_chapter": 4,
+  "total_videos_created": 9,
+  "last_updated": "2026-09-02T12:03:30.892966",
   "completed_chapters": [
     {
       "book": "Genesis",
       "chapter": 1,
       "completed_at": "2026-09-01T12:30:35.628851",
+      "parts_generated": 3
+    },
+    {
+      "book": "Genesis",
+      "chapter": 2,
+      "completed_at": "2026-09-02T10:00:52.422207",
+      "parts_generated": 3
+    },
+    {
+      "book": "Genesis",
+      "chapter": 3,
+      "completed_at": "2026-09-02T12:03:30.892966",
       "parts_generated": 3
     }
   ]

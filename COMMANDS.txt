@@ -1,70 +1,35 @@
 ================================================================================
-           BIBLE SHORTS & REELS AI AUTOMATION - QUICK COMMAND GUIDE
-================================================================================
-Series Structure: Genesis to Revelation (1 Chapter -> 3 Videos Per Day)
-Accounts Linked : YouTube Channel & Instagram (@biblewithai7)
+           AUTOMATION MASTER COMMANDS REFERENCE (ALL ENGINES)
 ================================================================================
 
-[1] DAILY AUTOMATION COMMAND (RUN TODAY'S CHAPTER)
 --------------------------------------------------------------------------------
-To generate all 3 videos for today's Bible chapter and automatically upload
-them to BOTH YouTube Shorts (scheduled for 9 AM, 2 PM, 7 PM) and Instagram Reels:
-
-    start-youtube
-
-* Note: After finishing, it automatically advances the chapter pointer for tomorrow!
-
-
-[2] CHECK YOUR BIBLE CHAPTER PROGRESS
+1. 100% AUTOMATED 2-HOST DEEP DIVE ENGINE (OPENROUTER + ELEVENLABS)
 --------------------------------------------------------------------------------
-To see which book and chapter is scheduled next and how many videos are completed:
+Generates a full 2-host podcast deep-dive video on 100% autopilot:
+• OpenRouter (DeepSeek R1 / DeepSeek V3 / GPT-4o-mini) + Google Pro for scripts.
+• ElevenLabs multi-speaker engine generates Alex (Adam) & Sarah voices.
+• Synchronization engine tracks every dialogue turn with 100.00% zero-drift accuracy.
+• Renders active speaker badges, speech subtitles, architecture, and terminal code.
 
-    start-youtube --status
+# Generate Git Lesson 1:
+start-tech-course --course git --lesson 1
 
+# Generate any other lesson on demand:
+start-tech-course --course git --lesson 2
+start-tech-course --course git --lesson 3
 
-[3] JUMP / RESET TO ANY BOOK AND CHAPTER
+# Saved Videos Location:
+/home/user/Desktop/automation/tech_course_ai/output/
+
 --------------------------------------------------------------------------------
-If you want to start from or jump to a specific book and chapter:
-
-    start-youtube --set-position Genesis 1
-    start-youtube --set-position Exodus 14
-    start-youtube --set-position Matthew 1
-    start-youtube --set-position Revelation 1
-
-
-[4] RUN A SPECIFIC CHAPTER ON-DEMAND (WITHOUT CHANGING SAVED PROGRESS)
+2. BIBLE SHORTS & REELS ENGINE (INSTAGRAM & YOUTUBE)
 --------------------------------------------------------------------------------
-To make 3 videos for a specific chapter without altering your daily schedule:
+# Trigger full daily pipeline (Genesis to Revelation progression):
+start-youtube
 
-    start-youtube --book Genesis --chapter 1
-    start-youtube --book Daniel --chapter 6
+# Check account status & schedule:
+check-status
 
-
-[5] TEST GENERATE LOCALLY (NO UPLOADS)
---------------------------------------------------------------------------------
-To render the 3 videos locally onto your computer without posting to social media:
-
-    start-youtube --no-upload
-
-
-[6] 100% HANDS-FREE AUTOMATIC DAILY SCHEDULING (CRON JOB)
---------------------------------------------------------------------------------
-To make your computer automatically generate and schedule 3 videos every night 
-at midnight (00:00) while you sleep:
-
-1. In your terminal, type:
-    crontab -e
-
-2. Paste this line at the bottom and save:
-    0 0 * * * /home/user/.local/bin/start-youtube >> /home/user/Desktop/automation/bible_shorts_ai/output/cron.log 2>&1
-
-
-================================================================================
-FILE & DIRECTORY LOCATIONS
-================================================================================
-- Rendered Videos    : /home/user/Desktop/automation/bible_shorts_ai/output/
-- Progress State File: /home/user/Desktop/automation/bible_shorts_ai/bible_progress.json
-- Instagram & API Key: /home/user/Desktop/automation/bible_shorts_ai/.env
-- YouTube Credentials: /home/user/Desktop/automation/bible_shorts_ai/client_secrets.json
-- YouTube Auth Token : /home/user/Desktop/automation/bible_shorts_ai/token.json
+# Generate on-demand shorts with custom prompt:
+generate-shorts --topic "David and Goliath"
 ================================================================================

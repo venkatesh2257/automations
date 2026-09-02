@@ -163,27 +163,27 @@ Return a JSON array of EXACTLY 3 objects with this structure:
       {{
         "scene_id": 1,
         "narration": "Viral retention hook sentence (under 12 words).",
-        "visual_prompt": "Detailed cinematic prompt for AI image generator, vertical 9:16, cinematic biblical art, 8k, dramatic lighting..."
+        "visual_prompt": "3D Disney Pixar animation movie style, cute expressive 3D character of [character/action], magical glowing environment, volumetric golden sunbeams, vibrant colors, vertical 9:16"
       }},
       {{
         "scene_id": 2,
         "narration": "Story development sentence.",
-        "visual_prompt": "Detailed cinematic prompt..."
+        "visual_prompt": "3D Disney Pixar animated scene of [event], charming 3D characters, vibrant lush setting, cinematic lighting, vertical 9:16"
       }},
       {{
         "scene_id": 3,
         "narration": "Building tension sentence.",
-        "visual_prompt": "Detailed cinematic prompt..."
+        "visual_prompt": "3D Dreamworks animated movie style of [dramatic moment], expressive facial emotions, dramatic lighting, vertical 9:16"
       }},
       {{
         "scene_id": 4,
         "narration": "Cliffhanger or transition sentence to Part 2.",
-        "visual_prompt": "Detailed cinematic prompt..."
+        "visual_prompt": "3D animated movie style of [pivotal scene], volumetric sunbeams, vibrant atmosphere, vertical 9:16"
       }},
       {{
         "scene_id": 5,
         "narration": "Moral takeaway and subscribe call to action.",
-        "visual_prompt": "Uplifting spiritual cinematic prompt..."
+        "visual_prompt": "Inspiring 3D Disney Pixar animated scene of [peaceful/triumphant scene], radiant golden sunlight, warm uplifting feeling, vertical 9:16"
       }}
     ],
     "youtube_title": "{book} {chapter} (Part 1/3): Viral Title #shorts #bible",
@@ -219,7 +219,7 @@ Strict Rules:
 4. Output ONLY valid JSON array without backticks or markdown fences.
 """
             response = client.models.generate_content(
-                model='gemini-2.5-flash',
+                model='gemini-3.6-flash',
                 contents=prompt
             )
             raw_text = response.text.strip()

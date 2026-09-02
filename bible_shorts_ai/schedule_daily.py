@@ -90,7 +90,8 @@ def run_daily_chapter(
             generate_scene_image(
                 prompt=scene.visual_prompt,
                 output_path=img_path,
-                scene_number=scene.scene_id
+                scene_number=scene.scene_id,
+                narration=scene.narration
             )
             image_paths.append(img_path)
 

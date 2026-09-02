@@ -1,0 +1,45 @@
+{
+  "active_course": "git_masterclass",
+  "current_lesson": 1,
+  "courses_progress": {
+    "git_masterclass": {
+      "current_lesson": 1,
+      "completed": []
+    },
+    "devops_cloud": {
+      "current_lesson": 1,
+      "completed": []
+    },
+    "mobile_dev": {
+      "current_lesson": 1,
+      "completed": []
+    },
+    "git": {
+      "current_lesson": 4,
+      "completed": [
+        {
+          "lesson_number": 1,
+          "completed_at": "2026-09-01T17:47:23.272222"
+        },
+        {
+          "lesson_number": 1,
+          "completed_at": "2026-09-01T17:48:40.369334"
+        },
+        {
+          "lesson_number": 1,
+          "completed_at": "2026-09-01T18:03:51.634148"
+        },
+        {
+          "lesson_number": 2,
+          "completed_at": "2026-09-01T18:07:07.944277"
+        },
+        {
+          "lesson_number": 3,
+          "completed_at": "2026-09-01T18:26:10.725847"
+        }
+      ]
+    }
+  },
+  "total_videos_created": 5,
+  "last_updated": "2026-09-01T18:26:10.725847"
+}
