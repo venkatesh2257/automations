@@ -6,14 +6,27 @@ venv/
 .venv/
 
 # Environment and secrets
+.env
 *.env
-bible_shorts_ai/token.json
-bible_shorts_ai/client_secrets.json
-bible_shorts_ai/ig_session.json
+*.env.*
+*token*.json
+*client_secrets*.json
+*ig_session*.json
+*session*.json
+credentials.json
+
+# Workhive private sheets & logs
+*.xlsx
+workhive/daily_work_sheet.xlsx
+workhive/logs/
 
 # Generated video outputs & temporary files
-bible_shorts_ai/temp/
-bible_shorts_ai/output/*.mp4
-tech_course_ai/temp/
-tech_course_ai/output/*.mp4
+*/temp/
+temp/
+output/
+*/output/
+*.mp4
+*.aac
+*.wav
 tech_course_ai/assets/broll/
+

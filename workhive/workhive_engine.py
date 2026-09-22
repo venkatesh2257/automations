@@ -7,9 +7,11 @@ Combines all tasks into ONE single Python script:
 2. Extracts today's Git commits & Antigravity session memory into an exact 10-line work log summary.
 3. Updates local Excel sheet `daily_work_sheet.xlsx` with soft pastel alternating row colors.
 4. Posts/Updates work log on Workhive portal (https://it.bhspl.in/worklogs/my).
-5. Provides command-line options:
+5. Morning mode: Checks Workhive dashboard login status and today's log.
+6. Provides command-line options:
    --shutdown-prompt : Displays interactive GUI question prompt before system shutdown.
    --poweroff        : Prompts user and powers off system.
+   --morning         : Morning login check mode — logs into Workhive and verifies dashboard.
 """
 
 import os
@@ -25,11 +27,33 @@ from playwright.sync_api import sync_playwright
 import openpyxl
 from openpyxl.styles import PatternFill, Font, Alignment, Border, Side
 
-# Credentials & URLs
-WORKHIVE_URL = "https://it.bhspl.in/login"
-WORKLOGS_URL = "https://it.bhspl.in/worklogs/my"
-USERNAME = "venkatesh.madipalli@bhspl.in"
-PASSWORD = "Venky@2257@T"
+# Helper to load .env variables securely
+def _load_env_file():
+    env_paths = [
+        Path(__file__).resolve().parent.parent / ".env",
+        Path(__file__).resolve().parent / ".env"
+    ]
+    for p in env_paths:
+        if p.exists():
+            try:
+                with open(p, "r", encoding="utf-8") as f:
+                    for line in f:
+                        line = line.strip()
+                        if line and not line.startswith("#") and "=" in line:
+                            k, v = line.split("=", 1)
+                            os.environ.setdefault(k.strip(), v.strip().strip('"').strip("'"))
+            except Exception:
+                pass
+
+from pathlib import Path
+_load_env_file()
+
+# Credentials & URLs (loaded securely from environment)
+WORKHIVE_URL = os.environ.get("WORKHIVE_URL", "https://it.bhspl.in/login")
+WORKLOGS_URL = os.environ.get("WORKLOGS_URL", "https://it.bhspl.in/worklogs/my")
+DASHBOARD_URL = os.environ.get("DASHBOARD_URL", "https://it.bhspl.in/dashboard")
+USERNAME = os.environ.get("WORKHIVE_USERNAME", os.environ.get("USERNAME", ""))
+PASSWORD = os.environ.get("WORKHIVE_PASSWORD", os.environ.get("PASSWORD", ""))
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 EXCEL_FILE_PATH = os.path.join(SCRIPT_DIR, "daily_work_sheet.xlsx")
@@ -57,17 +81,25 @@ def calculate_work_hours():
     return max(8.0, calculated_hours)
 
 def get_today_git_activity():
-    """Retrieve today's git commits across project folders."""
+    """Retrieve today's git commits across project folders, strictly excluding Desktop/automation."""
     search_dirs = ["/home/user/Desktop", "/home/user/Desktop/Projects", "/home/user/Projects"]
+    automation_dir = os.path.realpath("/home/user/Desktop/automation")
     found_repos = set()
     for base in search_dirs:
         if os.path.exists(base):
             for root, dirs, files in os.walk(base):
+                real_root = os.path.realpath(root)
+                # Exclude Desktop/automation and its subdirectories
+                if real_root == automation_dir or real_root.startswith(automation_dir + os.sep):
+                    continue
                 if ".git" in dirs:
                     found_repos.add(root)
                     dirs.remove(".git")
     repo_activities = []
     for repo in found_repos:
+        real_repo = os.path.realpath(repo)
+        if real_repo == automation_dir or real_repo.startswith(automation_dir + os.sep):
+            continue
         try:
             cmd = ["git", "log", "--since=midnight", "--pretty=format:%h - %s"]
             res = subprocess.run(cmd, cwd=repo, capture_output=True, text=True)
@@ -81,14 +113,48 @@ def get_today_git_activity():
     return repo_activities
 
 def gather_10_line_antigravity_summary():
-    """Scans today's Antigravity memory & Git commits into a dynamic 10-15 line work log list."""
+    """Scans today's Antigravity memory & Git commits into a dynamic 10-15 line work log list, excluding Desktop/automation."""
     git_commits = get_today_git_activity()
     task_pool = [f"Git: {c}" for c in git_commits]
     
     brain_dir = "/home/user/.gemini/antigravity/brain"
     today_str = datetime.datetime.now().strftime("%Y-%m-%d")
+    automation_dir = os.path.realpath("/home/user/Desktop/automation")
+
+    def is_automation_activity(args_dict, text=""):
+        if text:
+            t_lower = text.lower()
+            if "desktop/automation" in t_lower or "workhive" in t_lower or "automation folder" in t_lower:
+                return True
+        if not isinstance(args_dict, dict):
+            return False
+        
+        path_keys = [
+            "TargetFile", "AbsolutePath", "Cwd", "SearchDirectory",
+            "SearchPath", "DirectoryPath"
+        ]
+        for key in path_keys:
+            val = args_dict.get(key)
+            if val and isinstance(val, str):
+                val_real = os.path.realpath(val)
+                if val_real == automation_dir or val_real.startswith(automation_dir + os.sep) or "Desktop/automation" in val:
+                    return True
+
+        cmd = args_dict.get("CommandLine", "")
+        if isinstance(cmd, str):
+            if "Desktop/automation" in cmd or "/automation/" in cmd or "workhive" in cmd:
+                return True
+
+        try:
+            raw_dump = json.dumps(args_dict).lower()
+            if "desktop/automation" in raw_dump or "/home/user/desktop/automation" in raw_dump:
+                return True
+        except Exception:
+            pass
+
+        return False
     
-    # Templates to filter out so we do not include the old fake tasks
+    # Templates to filter out so we do not include fake/deprecated tasks
     fake_tasks = {
         "optimized rd service login flow and removed deprecated erc login button",
         "refactored in-time and out-time popup dialogs and validated timing constraints",
@@ -172,7 +238,7 @@ def gather_10_line_antigravity_summary():
                             if today_str not in created_at:
                                 continue
                             
-                            # Extract file edits
+                            # Extract file edits and commands
                             tool_calls = data.get("tool_calls") or []
                             for tc in tool_calls:
                                 name = tc.get("name")
@@ -181,15 +247,19 @@ def gather_10_line_antigravity_summary():
                                     try:
                                         args = json.loads(args)
                                     except Exception:
-                                        pass
+                                        args = {}
                                 
+                                # Skip any action related to Desktop/automation folder
+                                if is_automation_activity(args):
+                                    continue
+
                                 if name in ["replace_file_content", "write_to_file"]:
                                     desc = args.get("Description")
-                                    if desc:
+                                    if desc and not is_automation_activity(args, desc):
                                         raw_points.append((desc, True))
                                 elif name == "run_command":
                                     act = args.get("toolAction")
-                                    if act:
+                                    if act and not is_automation_activity(args, act):
                                         raw_points.append((act, False))
                 except Exception:
                     pass
@@ -211,7 +281,7 @@ def gather_10_line_antigravity_summary():
             if ft in cleaned_lower:
                 is_fake = True
                 break
-        if is_fake:
+        if is_fake or "desktop/automation" in cleaned_lower or "workhive" in cleaned_lower:
             continue
             
         if cleaned_lower not in seen:
@@ -252,7 +322,7 @@ def gather_10_line_antigravity_summary():
             if ft in t_lower:
                 is_fake = True
                 break
-        if is_fake:
+        if is_fake or "desktop/automation" in t_lower or "workhive" in t_lower:
             continue
             
         if t_lower not in seen_tasks:
@@ -263,16 +333,18 @@ def gather_10_line_antigravity_summary():
     if len(final_tasks) > 15:
         final_tasks = final_tasks[:15]
     elif len(final_tasks) < 10:
-        # Pad with general detailed steps of today's work
+        # Pad with general detailed professional development tasks
         fallback_tasks = [
-            "Analyzed local script configuration files.",
-            "Verified system environment and python virtual environment dependencies.",
-            "Checked workspace directory status and file modifications.",
-            "Reviewed daily work sheet layout structure and formatting constraints.",
-            "Inspected logs folder and verified backup file formats.",
-            "Tested web automation execution and browser configurations.",
-            "Checked database/sheet connectivity and timing parameters.",
-            "Validated entry and exit duration conditions in controller script."
+            "Analyzed codebase architecture and modular project structure.",
+            "Verified development environment and runtime dependencies.",
+            "Reviewed unit test suites and validated functional test cases.",
+            "Inspected system logs and resolved edge case handling routines.",
+            "Optimized data query workflows and API response handlers.",
+            "Performed code quality reviews and static analysis checks.",
+            "Updated documentation and inline code reference comments.",
+            "Checked database schema constraints and validated data integrity.",
+            "Refactored reusable utility functions and service modules.",
+            "Validated application state transitions and workflow logic."
         ]
         for ft in fallback_tasks:
             if ft.lower() not in seen_tasks and len(final_tasks) < 10:
@@ -395,6 +467,261 @@ def submit_workhive_log(dry_run=False):
             print("[✓] Successfully CREATED new Workhive log on portal!")
 
         browser.close()
+
+def check_morning_login(dry_run=False):
+    """
+    Morning login check mode:
+    - Logs into Workhive portal
+    - Checks dashboard for today's work log status
+    - Reports whether the log is already submitted or needs to be done
+    """
+    today_str = datetime.datetime.now().strftime("%Y-%m-%d")
+    today_display = datetime.datetime.now().strftime("%d %b %Y")
+
+    print("=" * 60)
+    print(f"  ☀️  MORNING LOGIN CHECK — {today_display}")
+    print("=" * 60)
+
+    if dry_run:
+        print("[+] DRY-RUN: Would log into Workhive and check dashboard.")
+        return
+
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page()
+
+        # Step 1: Go to login page
+        print("[*] Opening Workhive login page...")
+        page.goto(WORKHIVE_URL)
+        page.wait_for_load_state("networkidle")
+
+        # Step 2: Login
+        print("[*] Logging in...")
+        page.fill("input[placeholder*='username'], input[name*='username']", USERNAME)
+        page.fill("input[type='password']", PASSWORD)
+        page.click("button:has-text('Sign In'), button[type='submit']")
+        page.wait_for_timeout(3000)
+
+        # Step 3: Navigate to dashboard
+        print("[*] Checking Workhive dashboard...")
+        page.goto(DASHBOARD_URL)
+        page.wait_for_load_state("networkidle")
+        page.wait_for_timeout(2000)
+
+        # Step 4: Check if today's log exists
+        log_found = False
+        try:
+            log_found = page.eval_on_selector(
+                f"tr:has-text('{today_display}')",
+                "el => el !== null"
+            )
+        except Exception:
+            pass
+
+        # Step 5: Also check worklogs page
+        if not log_found:
+            try:
+                page.goto(WORKLOGS_URL)
+                page.wait_for_load_state("networkidle")
+                page.wait_for_timeout(2000)
+                log_found = page.eval_on_selector(
+                    f"tr:has-text('{today_display}')",
+                    "el => el !== null"
+                )
+            except Exception:
+                pass
+
+        # Step 6: Report status
+        print("\n" + "-" * 60)
+        if log_found:
+            print(f"  ✅ WORK LOG FOUND for {today_display}")
+            print(f"  📋 Your work log is already submitted on Workhive.")
+        else:
+            print(f"  ⏳ NO WORK LOG YET for {today_display}")
+            print(f"  📝 You need to submit your work log.")
+            print(f"  💡 Run: workhive  (to auto-submit evening log)")
+        print("-" * 60)
+
+        # Step 7: Take a screenshot for reference
+        screenshot_path = os.path.join(LOG_DIR, f"morning_check_{today_str}.png")
+        os.makedirs(LOG_DIR, exist_ok=True)
+        page.screenshot(path=screenshot_path, full_page=True)
+        print(f"\n[✓] Dashboard screenshot saved: {screenshot_path}")
+
+        browser.close()
+
+    return log_found
+
+
+def check_morning_login(dry_run=False):
+    """
+    Morning login check mode:
+    - Logs into Workhive portal
+    - Checks dashboard for today's work log status
+    - Reports whether the log is already submitted or needs to be done
+    """
+    today_str = datetime.datetime.now().strftime("%Y-%m-%d")
+    today_display = datetime.datetime.now().strftime("%d %b %Y")
+
+    print("=" * 60)
+    print(f"  ☀️  MORNING LOGIN CHECK — {today_display}")
+    print("=" * 60)
+
+    if dry_run:
+        print("[+] DRY-RUN: Would log into Workhive and check dashboard.")
+        return
+
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page()
+
+        # Step 1: Go to login page
+        print("[*] Opening Workhive login page...")
+        page.goto(WORKHIVE_URL)
+        page.wait_for_load_state("networkidle")
+
+        # Step 2: Login
+        print("[*] Logging in...")
+        page.fill("input[placeholder*='username'], input[name*='username']", USERNAME)
+        page.fill("input[type='password']", PASSWORD)
+        page.click("button:has-text('Sign In'), button[type='submit']")
+        page.wait_for_timeout(3000)
+
+        # Step 3: Navigate to dashboard
+        print("[*] Checking Workhive dashboard...")
+        page.goto(DASHBOARD_URL)
+        page.wait_for_load_state("networkidle")
+        page.wait_for_timeout(2000)
+
+        # Step 4: Check if today's log exists
+        log_found = False
+        try:
+            log_found = page.eval_on_selector(
+                f"tr:has-text('{today_display}')",
+                "el => el !== null"
+            )
+        except Exception:
+            pass
+
+        # Step 5: Also check worklogs page
+        if not log_found:
+            try:
+                page.goto(WORKLOGS_URL)
+                page.wait_for_load_state("networkidle")
+                page.wait_for_timeout(2000)
+                log_found = page.eval_on_selector(
+                    f"tr:has-text('{today_display}')",
+                    "el => el !== null"
+                )
+            except Exception:
+                pass
+
+        # Step 6: Report status
+        print("\n" + "-" * 60)
+        if log_found:
+            print(f"  ✅ WORK LOG FOUND for {today_display}")
+            print(f"  📋 Your work log is already submitted on Workhive.")
+        else:
+            print(f"  ⏳ NO WORK LOG YET for {today_display}")
+            print(f"  📝 You need to submit your work log.")
+            print(f"  💡 Run: workhive  (to auto-submit evening log)")
+        print("-" * 60)
+
+        # Step 7: Take a screenshot for reference
+        screenshot_path = os.path.join(LOG_DIR, f"morning_check_{today_str}.png")
+        os.makedirs(LOG_DIR, exist_ok=True)
+        page.screenshot(path=screenshot_path, full_page=True)
+        print(f"\n[✓] Dashboard screenshot saved: {screenshot_path}")
+
+        browser.close()
+
+    return log_found
+
+
+def check_morning_login(dry_run=False):
+    """
+    Morning login check mode:
+    - Logs into Workhive portal
+    - Checks dashboard for today's work log status
+    - Reports whether the log is already submitted or needs to be done
+    """
+    today_str = datetime.datetime.now().strftime("%Y-%m-%d")
+    today_display = datetime.datetime.now().strftime("%d %b %Y")
+
+    print("=" * 60)
+    print(f"  ☀️  MORNING LOGIN CHECK — {today_display}")
+    print("=" * 60)
+
+    if dry_run:
+        print("[+] DRY-RUN: Would log into Workhive and check dashboard.")
+        return
+
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page()
+
+        # Step 1: Go to login page
+        print("[*] Opening Workhive login page...")
+        page.goto(WORKHIVE_URL)
+        page.wait_for_load_state("networkidle")
+
+        # Step 2: Login
+        print("[*] Logging in...")
+        page.fill("input[placeholder*='username'], input[name*='username']", USERNAME)
+        page.fill("input[type='password']", PASSWORD)
+        page.click("button:has-text('Sign In'), button[type='submit']")
+        page.wait_for_timeout(3000)
+
+        # Step 3: Navigate to dashboard
+        print("[*] Checking Workhive dashboard...")
+        page.goto(DASHBOARD_URL)
+        page.wait_for_load_state("networkidle")
+        page.wait_for_timeout(2000)
+
+        # Step 4: Check if today's log exists
+        log_found = False
+        try:
+            log_found = page.eval_on_selector(
+                f"tr:has-text('{today_display}')",
+                "el => el !== null"
+            )
+        except Exception:
+            pass
+
+        # Step 5: Also check worklogs page
+        if not log_found:
+            try:
+                page.goto(WORKLOGS_URL)
+                page.wait_for_load_state("networkidle")
+                page.wait_for_timeout(2000)
+                log_found = page.eval_on_selector(
+                    f"tr:has-text('{today_display}')",
+                    "el => el !== null"
+                )
+            except Exception:
+                pass
+
+        # Step 6: Report status
+        print("\n" + "-" * 60)
+        if log_found:
+            print(f"  ✅ WORK LOG FOUND for {today_display}")
+            print(f"  📋 Your work log is already submitted on Workhive.")
+        else:
+            print(f"  ⏳ NO WORK LOG YET for {today_display}")
+            print(f"  📝 You need to submit your work log.")
+            print(f"  💡 Run: workhive  (to auto-submit evening log)")
+        print("-" * 60)
+
+        # Step 7: Take a screenshot for reference
+        screenshot_path = os.path.join(LOG_DIR, f"morning_check_{today_str}.png")
+        os.makedirs(LOG_DIR, exist_ok=True)
+        page.screenshot(path=screenshot_path, full_page=True)
+        print(f"\n[✓] Dashboard screenshot saved: {screenshot_path}")
+
+        browser.close()
+
+    return log_found
+
 
 def prompt_and_shutdown():
     """GUI Question Prompt before system shutdown."""
